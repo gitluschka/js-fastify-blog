@@ -1,51 +1,40 @@
-version: '3.9'
-
 services:
   db:
-    image: postgres:15
-    restart: always
+    image: postgres:15-alpine
     environment:
-      POSTGRES_DB: \${DATABASE_NAME}
-      POSTGRES_USER: \${DATABASE_USERNAME}
-      POSTGRES_PASSWORD: \${DATABASE_PASSWORD}
-    ports:
-      - "\${DATABASE_PORT}:5432"
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: blog_db
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
 
   app:
     build:
       context: .
-      target: base
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgres://user:password@db:5432/blog_db
+      - NODE_ENV=development
     command: npm run dev
     volumes:
-      - ./:/usr/src/app
-      - /usr/src/app/node_modules
+      - ./:/app
+      - /app/node_modules
     ports:
-      - "8080:8080"
-    environment:
-      NODE_ENV: development
-      DATABASE_NAME: \${DATABASE_NAME}
-      DATABASE_USERNAME: \${DATABASE_USERNAME}
-      DATABASE_PASSWORD: \${DATABASE_PASSWORD}
-      DATABASE_HOST: db
-      DATABASE_PORT: \${DATABASE_PORT}
+      - '8080:8080'
     depends_on:
       - db
 
-  tests:
+  test:
     build:
       context: .
-      target: base
-    command: npm test
+      dockerfile: Dockerfile
     environment:
-      DATABASE_NAME: \${DATABASE_NAME}
-      DATABASE_USERNAME: \${DATABASE_USERNAME}
-      DATABASE_PASSWORD: \${DATABASE_PASSWORD}
-      DATABASE_HOST: db
-      DATABASE_PORT: \${DATABASE_PORT}
+      - NODE_ENV=test
+    command: npm test
     depends_on:
       - db
 
 volumes:
-  db_data:
+  db-data:
